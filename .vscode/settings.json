@@ -1,0 +1,8 @@
+{
+  "Lua.workspace.ignoreDir": [
+    "/*",
+    "!${workspaceFolder}/**"
+  ],
+  "Lua.workspace.library": [],
+  "Lua.workspace.userThirdParty": []
+}

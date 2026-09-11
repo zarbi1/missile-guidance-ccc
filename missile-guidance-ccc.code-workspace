@@ -1,0 +1,18 @@
+{
+    "folders": [
+        {
+            "path": "."
+        },
+        {
+            "name": "0",
+            "uri": "craftos-pc://0/"
+        }
+    ],
+    "settings": {
+        "Lua.workspace.ignoreDir": [
+            "/*",
+            "!${workspaceFolder:.}/**"
+        ],
+        "Lua.workspace.checkThirdParty": false
+    }
+}
