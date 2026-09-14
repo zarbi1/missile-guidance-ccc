@@ -1,8 +1,62 @@
 {
+  "Lua.runtime.version": "LuaJIT",
+  "Lua.runtime.path": [
+    "?.lua",
+    "?/init.lua",
+    "v1/?.lua",
+    "v1/?/init.lua",
+    "v1/ui/?.lua",
+    "v1/logic/?.lua",
+    "?/?.lua"
+  ],
+  "Lua.workspace.library": [
+    "${workspaceFolder}/.vscode/library"
+  ],
   "Lua.workspace.ignoreDir": [
     "/*",
     "!${workspaceFolder}/**"
   ],
-  "Lua.workspace.library": [],
-  "Lua.workspace.userThirdParty": []
+  "Lua.workspace.checkThirdParty": false,
+  "Lua.diagnostics.globals": [
+    "colors",
+    "colours",
+    "commands",
+    "disk",
+    "fs",
+    "gps",
+    "help",
+    "http",
+    "keys",
+    "multishell",
+    "os",
+    "paintutils",
+    "parallel",
+    "peripheral",
+    "pocket",
+    "rednet",
+    "redstone",
+    "rs",
+    "settings",
+    "shell",
+    "term",
+    "textutils",
+    "turtle",
+    "vector",
+    "window",
+    "sleep",
+    "write",
+    "printError",
+    "read",
+    "require",
+    "_ENV",
+    "_G",
+    "GYRO",
+    "PITCH",
+    "ROLL",
+    "MONITOR",
+    "TARGET_COORDINATES",
+    "Launch_main_ui",
+    "Start_procedure",
+    "Connect"
+  ]
 }

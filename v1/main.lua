@@ -1,3 +1,5 @@
+local main_page = require("ui.main_page")
+
 print("Starting Detecting hardware")
 local rednet_protocol_name = "missile_command_center"
 local rednet_gyro_name = "gyro"
@@ -52,3 +54,9 @@ end
 print("monitor detected. All systems online.")
 
 print("Starting UI...")
+
+main_page.Launch_main_ui(MONITOR, PITCH, ROLL, GYRO)
+
+
+
+print("UI exited, stopping....")
