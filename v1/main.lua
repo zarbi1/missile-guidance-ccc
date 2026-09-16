@@ -5,6 +5,7 @@ local rednet_protocol_name = "missile_command_center"
 local rednet_gyro_name = "gyro"
 local rednet_pitch_name = "pitch"
 local rednet_roll_name = "roll"
+local rednet_missile_name = "missile"
 
 local modem = peripheral.find("modem", rednet.open)
 
@@ -41,8 +42,15 @@ if not ROLL then
     return
 end
 
-print("Roll telemetry detected, now detecting monitor...")
+print("Roll telemetry detected, checking for onboard missile computer...")
+MISSILE = rednet.lookup(rednet_protocol_name, rednet_missile_name)
+if MISSILE then
+    print(string.format("Missile computer detected (ID: %d).", MISSILE))
+else
+    print("Missile computer not detected yet (connection will be established at target input).")
+end
 
+print("Now detecting monitor...")
 
 MONITOR = peripheral.find("monitor")
 
@@ -55,7 +63,7 @@ print("monitor detected. All systems online.")
 
 print("Starting UI...")
 
-main_page.Launch_main_ui(MONITOR, PITCH, ROLL, GYRO)
+main_page.Launch_main_ui(MONITOR, PITCH, ROLL, GYRO, MISSILE)
 
 
 

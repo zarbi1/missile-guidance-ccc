@@ -1,9 +1,23 @@
 local missileLogic = {}
 
----Simulates connecting to the missile silo / missile hardware.
----@return boolean success
+local protocol_name = "missile_command_center"
+local missile_host_name = "missile"
+
+---Attempts to find and connect to the onboard missile computer over rednet.
+---@return boolean success, any id_or_err
 function missileLogic.Connect()
-    return true
+    if not rednet or not rednet.isOpen() then
+        return false, "Rednet not open"
+    end
+
+    local id = rednet.lookup(protocol_name, missile_host_name)
+    if id then
+        MISSILE = id
+        return true, id
+    end
+
+    MISSILE = nil
+    return false, "Missile computer not detected"
 end
 
 -- Also define global for backward compatibility

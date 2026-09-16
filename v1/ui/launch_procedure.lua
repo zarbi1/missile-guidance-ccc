@@ -1,4 +1,5 @@
 local basalt = require("basalt")
+local missileLogic = require("logic.missile_connector")
 
 local launch_proc = {}
 
@@ -6,9 +7,11 @@ local launch_proc = {}
 TARGET_COORDINATES = TARGET_COORDINATES or nil
 
 ---Launches the interactive target coordinate input dialog.
+---Checks missile connection first; if disconnected, prompts user to refresh connection before inputting coords.
 ---@param parentFrame? table The parent Basalt frame (defaults to basalt.getMainFrame())
 ---@param onLocked? fun(coords: table) Callback when coordinates are locked
-function launch_proc.Start_procedure(parentFrame, onLocked)
+---@param onConnectionChanged? fun(connected: boolean) Callback when missile connection state updates
+function launch_proc.Start_procedure(parentFrame, onLocked, onConnectionChanged)
     parentFrame = parentFrame or basalt.getMainFrame()
     if not parentFrame then
         print("[ERROR] No Basalt frame available to display coordinate dialog.")
@@ -16,7 +19,7 @@ function launch_proc.Start_procedure(parentFrame, onLocked)
     end
 
     local fWidth, fHeight = parentFrame:getSize()
-    local dialogWidth = 32
+    local dialogWidth = 34
     local dialogHeight = 12
     local dialogX = math.max(1, math.floor((fWidth - dialogWidth) / 2) + 1)
     local dialogY = math.max(1, math.floor((fHeight - dialogHeight) / 2) + 1)
@@ -38,7 +41,7 @@ function launch_proc.Start_procedure(parentFrame, onLocked)
     })
 
     -- Dialog Header Bar
-    dialog:addLabel({
+    local header = dialog:addLabel({
         x = 1,
         y = 1,
         width = dialogWidth,
@@ -48,61 +51,167 @@ function launch_proc.Start_procedure(parentFrame, onLocked)
         foreground = colors.white
     })
 
-    -- Coordinate Inputs
-    dialog:addLabel({ x = 3, y = 3, text = "Target X:", foreground = colors.white })
-    local inputX = dialog:addInput({
+    -- Content Subframes
+    local connectionView = dialog:addFrame({
+        x = 1,
+        y = 2,
+        width = dialogWidth,
+        height = dialogHeight - 1,
+        background = colors.gray,
+        visible = false
+    })
+
+    local coordsView = dialog:addFrame({
+        x = 1,
+        y = 2,
+        width = dialogWidth,
+        height = dialogHeight - 1,
+        background = colors.gray,
+        visible = false
+    })
+
+    ---------------------------------------------------------
+    -- View 1: Missile Connection Required View
+    ---------------------------------------------------------
+    connectionView:addLabel({
+        x = 3,
+        y = 2,
+        text = "Missile computer not detected!",
+        foreground = colors.yellow
+    })
+    connectionView:addLabel({
+        x = 3,
+        y = 4,
+        text = "Please turn on missile computer",
+        foreground = colors.white
+    })
+    connectionView:addLabel({
+        x = 3,
+        y = 5,
+        text = "and refresh connection to proceed.",
+        foreground = colors.lightGray
+    })
+
+    local connStatusLabel = connectionView:addLabel({
+        x = 3,
+        y = 7,
+        text = "Status: Disconnected",
+        foreground = colors.red
+    })
+
+    ---------------------------------------------------------
+    -- View 2: Coordinate Inputs View
+    ---------------------------------------------------------
+    coordsView:addLabel({ x = 3, y = 2, text = "Target X:", foreground = colors.white })
+    local inputX = coordsView:addInput({
         x = 13,
-        y = 3,
-        width = 16,
+        y = 2,
+        width = 18,
         text = initX,
         placeholder = "e.g. 100",
         background = colors.black,
         foreground = colors.lime
     })
 
-    dialog:addLabel({ x = 3, y = 5, text = "Target Y:", foreground = colors.white })
-    local inputY = dialog:addInput({
+    coordsView:addLabel({ x = 3, y = 4, text = "Target Y:", foreground = colors.white })
+    local inputY = coordsView:addInput({
         x = 13,
-        y = 5,
-        width = 16,
+        y = 4,
+        width = 18,
         text = initY,
         placeholder = "e.g. 64",
         background = colors.black,
         foreground = colors.lime
     })
 
-    dialog:addLabel({ x = 3, y = 7, text = "Target Z:", foreground = colors.white })
-    local inputZ = dialog:addInput({
+    coordsView:addLabel({ x = 3, y = 6, text = "Target Z:", foreground = colors.white })
+    local inputZ = coordsView:addInput({
         x = 13,
-        y = 7,
-        width = 16,
+        y = 6,
+        width = 18,
         text = initZ,
         placeholder = "e.g. -250",
         background = colors.black,
         foreground = colors.lime
     })
 
-    -- Validation / Status message label
-    local msgLabel = dialog:addLabel({
+    local coordsMsgLabel = coordsView:addLabel({
         x = 2,
-        y = 9,
+        y = 8,
         width = dialogWidth - 2,
         text = "Enter X, Y, Z coordinates",
         foreground = colors.lightGray
     })
 
+    local function switchToCoordsView()
+        header.text = "  TARGET COORDINATES  "
+        connectionView:setVisible(false)
+        coordsView:setVisible(true)
+        inputX:focus()
+    end
+
+    local function switchToConnectionView()
+        header.text = "  MISSILE NOT CONNECTED  "
+        connStatusLabel.text = "Status: Disconnected"
+        connStatusLabel.foreground = colors.red
+        coordsView:setVisible(false)
+        connectionView:setVisible(true)
+    end
+
+    -- Connection view buttons
+    connectionView:addButton({
+        x = 3,
+        y = 9,
+        width = 20,
+        height = 1,
+        text = " Refresh Connection ",
+        background = colors.blue,
+        foreground = colors.white
+    }):onClick(function()
+        connStatusLabel.text = "Checking connection..."
+        connStatusLabel.foreground = colors.cyan
+
+        local success, id = missileLogic.Connect()
+        if success then
+            connStatusLabel.text = "Connected! Loading..."
+            connStatusLabel.foreground = colors.lime
+            if onConnectionChanged then
+                onConnectionChanged(true)
+            end
+            switchToCoordsView()
+        else
+            connStatusLabel.text = "Missile not found. Retry?"
+            connStatusLabel.foreground = colors.yellow
+            if onConnectionChanged then
+                onConnectionChanged(false)
+            end
+        end
+    end)
+
+    connectionView:addButton({
+        x = 24,
+        y = 9,
+        width = 8,
+        height = 1,
+        text = " CANCEL ",
+        background = colors.red,
+        foreground = colors.white
+    }):onClick(function()
+        dialog:destroy()
+    end)
+
+    -- Coordinate submission
     local function submitCoordinates()
         local xVal = tonumber(inputX.text or "")
         local yVal = tonumber(inputY.text or "")
         local zVal = tonumber(inputZ.text or "")
 
         if not xVal or not yVal or not zVal then
-            msgLabel.text = "Error: Invalid numbers!"
-            msgLabel.foreground = colors.yellow
+            coordsMsgLabel.text = "Error: Invalid numbers!"
+            coordsMsgLabel.foreground = colors.yellow
             return
         end
 
-        -- Store coordinates in global variable
         TARGET_COORDINATES = {
             x = math.floor(xVal),
             y = math.floor(yVal),
@@ -116,40 +225,49 @@ function launch_proc.Start_procedure(parentFrame, onLocked)
         end
     end
 
-    -- SEND Button
-    local sendBtn = dialog:addButton({
+    -- Coords view buttons
+    coordsView:addButton({
         x = 3,
-        y = 11,
+        y = 10,
         width = 11,
         height = 1,
         text = "  SEND  ",
         background = colors.green,
         foreground = colors.white
-    })
-    sendBtn:onClick(function()
+    }):onClick(function()
         submitCoordinates()
     end)
 
-    -- CANCEL Button
-    local cancelBtn = dialog:addButton({
-        x = 18,
-        y = 11,
+    coordsView:addButton({
+        x = 20,
+        y = 10,
         width = 11,
         height = 1,
         text = " CANCEL ",
         background = colors.red,
         foreground = colors.white
-    })
-    cancelBtn:onClick(function()
+    }):onClick(function()
         dialog:destroy()
     end)
 
-    -- Allow Enter key in inputs to jump or submit
     inputX:onEnter(function() inputY:focus() end)
     inputY:onEnter(function() inputZ:focus() end)
     inputZ:onEnter(function() submitCoordinates() end)
 
-    inputX:focus()
+    -- Initial connection check
+    local isConnected = missileLogic.Connect()
+    if isConnected then
+        if onConnectionChanged then
+            onConnectionChanged(true)
+        end
+        switchToCoordsView()
+    else
+        if onConnectionChanged then
+            onConnectionChanged(false)
+        end
+        switchToConnectionView()
+    end
+
     return dialog
 end
 

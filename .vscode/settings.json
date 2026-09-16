@@ -57,6 +57,9 @@
     "TARGET_COORDINATES",
     "Launch_main_ui",
     "Start_procedure",
-    "Connect"
+    "Connect",
+    "MISSILE",
+    "Launch_missile",
+    "Stop_missile"
   ]
 }
